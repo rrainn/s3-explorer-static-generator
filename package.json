@@ -2,6 +2,11 @@
   "name": "s3-explorer-static-generator",
   "version": "1.0.0",
   "description": "A command line tool to generate static html files for a S3 bucket explorer.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rrainn/s3-explorer-static-generator.git"
+  },
+  "homepage": "https://github.com/rrainn/s3-explorer-static-generator",
   "main": "dist/index.js",
   "bin": {
     "s3-explorer-static-generator": "dist/index.js"
