@@ -1,0 +1,11 @@
+.right {
+	float: right;
+}
+
+.inlineBlock {
+	display: inline-block;
+}
+
+li {
+	list-style-type: none;
+}

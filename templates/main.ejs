@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title><%= title %></title>
+	<link rel="stylesheet" href="/public/css/index.css">
+</head>
+<body>
+	<ol>
+		<% for (const item of items) { %>
+		<a href="<%=
+		(() => {
+			if (item.IsFolder) {
+				return `/${item.KeyParts.join("/")}`;
+			} else if (options.endpoint) {
+				return `${options.endpoint}/${item.KeyParts.join("/")}`;
+			} else {
+				return `https://${options.forcePathStyle ? "" : `${options.bucket}.`}s3-${options.region}.amazonaws.com${options.forcePathStyle ? `/${options.bucket}` : ""}/${item.KeyParts.join("/")}`;
+			}
+		})();
+		%>">
+			<li><%= item.KeyParts[item.KeyParts.length - 1] %></li>
+		</a>
+		<% } %>
+	</ol>
+	<footer><% if (options.footer !== "") { %>
+		<p class="inlineBlock"><%= options.footer %></p><% } %>
+		<p class="inlineBlock right">Generated using <a href="https://github.com/rrainn/s3-explorer-static-generator">s3-explorer-static-generator</a></p>
+	</footer>
+</body>
+</html>
