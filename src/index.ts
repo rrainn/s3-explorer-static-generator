@@ -59,6 +59,9 @@ const options = program.opts();
 	if (options.endpoint) {
 		s3ClientOptions.endpoint = options.endpoint;
 	}
+	if (options.region) {
+		s3ClientOptions.region = options.region;
+	}
 	const s3Client = new S3Client(s3ClientOptions);
 
 	if (!options.bucket) {
