@@ -106,7 +106,7 @@ const options = program.opts();
 				if (isFolder) {
 					return [options.rootPath, ...keyParts].join("/");
 				} else if (options.endpoint) {
-					return `${options.endpoint}/${keyParts.join("/")}`;
+					return `${options.endpoint}/${options.bucket}/${keyParts.join("/")}`;
 				} else {
 					return `https://${options.forcePathStyle ? "" : `${options.bucket}.`}s3-${options.region}.amazonaws.com${options.forcePathStyle ? `/${options.bucket}` : ""}/${keyParts.join("/")}`;
 				}
@@ -139,13 +139,7 @@ const options = program.opts();
 						"ParentKey": parentKey,
 						"FileName": fileName,
 						"URL": (() => {
-							if (isFolder) {
-								return [options.rootPath, ...keyParts].join("/");
-							} else if (options.endpoint) {
-								return `${options.endpoint}/${keyParts.join("/")}`;
-							} else {
-								return `https://${options.forcePathStyle ? "" : `${options.bucket}.`}s3-${options.region}.amazonaws.com${options.forcePathStyle ? `/${options.bucket}` : ""}/${keyParts.join("/")}`;
-							}
+							return [options.rootPath, ...keyParts].join("/");
 						})()
 					};
 				})()
