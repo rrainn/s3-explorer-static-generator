@@ -5,6 +5,7 @@ import { ListObjectsCommand, S3Client, S3ClientConfig } from "@aws-sdk/client-s3
 import { promises as fs } from "fs";
 import * as path from "path";
 import * as ejs from "ejs";
+import { XMLBuilder } from "fast-xml-parser";
 
 const packageJSON = require("../package.json");
 
@@ -23,6 +24,9 @@ program
 	.option("-v --verbose", "Verbose output")
 	.option("--endpoint <endpoint>", "S3 Endpoint (if using a custom endpoint)")
 	.option("--include-hidden-files", "Include hidden files", false)
+	.option("--include-sitemap", "Include sitemap", false)
+	.option("--domain <domain>", "Domain name that this site will be hosted on", "")
+	.option("--root-path <rootPath>", "Path to the root file (used if will be hosted in a subdirectory of a website)", "/")
 	.option("--forcePathStyle", "Force path style", false);
 
 program.parse(process.argv);
@@ -35,6 +39,10 @@ const options = program.opts();
 	if (options.endpoint && !options.forcePathStyle) {
 		options.forcePathStyle = true;
 		options.verbose && console.log("Forcing Path Style since endpoint is specified.");
+	}
+	if (options.includeSitemap && !options.domain) {
+		console.error("Domain is required if using sitemap. Domain is not currently set. Please set the --domain option.");
+		process.exit(1);
 	}
 
 	let s3ClientOptions: S3ClientConfig = {
@@ -91,7 +99,7 @@ const options = program.opts();
 			"FileName": keyParts[keyParts.length - 1],
 			"URL": (() => {
 				if (isFolder) {
-					return `/${keyParts.join("/")}`;
+					return [options.rootPath, ...keyParts].join("/");
 				} else if (options.endpoint) {
 					return `${options.endpoint}/${keyParts.join("/")}`;
 				} else {
@@ -110,6 +118,8 @@ const options = program.opts();
 		return returnObject
 	}, { "/": [] } as any);
 
+	let sitemap: Set<string> = new Set();
+
 	await Promise.all(Object.entries(result).map(async ([key, value]) => {
 		const file = await ejs.renderFile(path.join(__dirname, "..", "templates", "main.ejs"), {
 			"title": `${options.bucket} - ${key}`,
@@ -121,8 +131,29 @@ const options = program.opts();
 		await fs.mkdir(saveLocation, {
 			"recursive": true
 		});
-		await fs.writeFile(path.join(saveLocation, "index.html"), file);
+		await fs.writeFile(path.join(saveLocation, "index.html"), file, "utf8");
+		sitemap.add([options.domain, options.rootPath, key].map((item) => removeLeadingTrailingSlashes(item)).filter(Boolean).join("/"));
 	}));
+
+	// Handle sitemap
+	if (options.includeSitemap) {
+		const parser = new XMLBuilder({
+			"attributeNamePrefix": "@_",
+			"ignoreAttributes": false,
+			"format": true,
+			"indentBy": "\t"
+		});
+		const xml = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n${parser.build({
+			"urlset": {
+				"@_xmlns": "http://www.sitemaps.org/schemas/sitemap/0.9",
+				"@_xmlns:xhtml": "http://www.w3.org/1999/xhtml",
+				"url": [...sitemap].sort().map((url) => ({
+					"loc": url
+				}))
+			}
+		})}`;
+		await fs.writeFile(path.join(options.output, "sitemap.xml"), xml, "utf8");
+	}
 
 	// Copy public folder to output
 	copyDir(path.join(__dirname, "..", "public"), path.join(options.output, "public"));
@@ -143,4 +174,14 @@ async function copyDir(src: string, dest: string) {
 
 		entry.isDirectory() ? await copyDir(srcPath, destPath) : await fs.copyFile(srcPath, destPath);
 	}));
+}
+
+function removeLeadingTrailingSlashes(str: string) {
+	while (str.startsWith('/')) {
+		str = str.substring(1);
+	}
+	while (str.endsWith('/')) {
+		str = str.substring(0, str.length - 1);
+	}
+	return str;
 }
