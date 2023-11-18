@@ -9,18 +9,8 @@
 <body>
 	<ol>
 		<% for (const item of items) { %>
-		<a href="<%=
-		(() => {
-			if (item.IsFolder) {
-				return `/${item.KeyParts.join("/")}`;
-			} else if (options.endpoint) {
-				return `${options.endpoint}/${item.KeyParts.join("/")}`;
-			} else {
-				return `https://${options.forcePathStyle ? "" : `${options.bucket}.`}s3-${options.region}.amazonaws.com${options.forcePathStyle ? `/${options.bucket}` : ""}/${item.KeyParts.join("/")}`;
-			}
-		})();
-		%>">
-			<li><%= item.KeyParts[item.KeyParts.length - 1] %></li>
+		<a href="<%= item.URL %>">
+			<li><%= item.FileName %></li>
 		</a>
 		<% } %>
 	</ol>

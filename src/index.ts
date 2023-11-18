@@ -87,6 +87,16 @@ const options = program.opts();
 			"IsFolder": isFolder,
 			"IsFile": isFile,
 			"ParentKey": parentKey,
+			"FileName": keyParts[keyParts.length - 1],
+			"URL": (() => {
+				if (isFolder) {
+					return `/${keyParts.join("/")}`;
+				} else if (options.endpoint) {
+					return `${options.endpoint}/${keyParts.join("/")}`;
+				} else {
+					return `https://${options.forcePathStyle ? "" : `${options.bucket}.`}s3-${options.region}.amazonaws.com${options.forcePathStyle ? `/${options.bucket}` : ""}/${keyParts.join("/")}`;
+				}
+			})()
 		};
 	}).reduce((returnObject, object) => {
 		const returnObjectKey = object.ParentKey ?? "/";
