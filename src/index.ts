@@ -91,6 +91,7 @@ const options = program.opts();
 		const isFolder = array.some((otherObject) => otherObject.Key?.startsWith(object.Key ?? "") && otherObject.Key !== object.Key);
 		const isFile = !isFolder;
 		const parentKey = keyParts.slice(0, -1).join("/");
+		const fileName = keyParts[keyParts.length - 1];
 
 		return {
 			...object,
@@ -98,8 +99,9 @@ const options = program.opts();
 			"LevelsDeep": levelsDeep,
 			"IsFolder": isFolder,
 			"IsFile": isFile,
+			"IsHiddenFile": fileName.startsWith("."),
 			"ParentKey": parentKey,
-			"FileName": keyParts[keyParts.length - 1],
+			"FileName": fileName,
 			"URL": (() => {
 				if (isFolder) {
 					return [options.rootPath, ...keyParts].join("/");
@@ -110,32 +112,89 @@ const options = program.opts();
 				}
 			})()
 		};
-	}).reduce((returnObject, object) => {
-		const returnObjectKey = object.ParentKey ?? "/";
-		const itemsArray = returnObject[returnObjectKey] ?? [];
-		if (options.includeHiddenFiles || !object.FileName.startsWith(".")) {
-			itemsArray.push(object);
-		}
-		returnObject[returnObjectKey] = itemsArray;
+	}).flatMap((object, _i, array) => {
+		const returnArray = [object];
 
-		return returnObject
-	}, { "/": [] } as any);
+		for (let i = object.LevelsDeep - 1; i >= 0; i--) {
+			returnArray.push(
+				(() => {
+					let key = object.KeyParts.slice(0, i).join("/");
+					if (key.length === 0) {
+						key = "/";
+					}
+					const keyParts = (key.split("/") ?? []).filter((part) => part.length > 0);
+					const levelsDeep = keyParts.length;
+					const isFolder = true;
+					const isFile = !isFolder;
+					const parentKey = keyParts.slice(0, -1).join("/");
+					const fileName = keyParts[keyParts.length - 1] ?? "";
+
+					return {
+						"Key": key,
+						"KeyParts": keyParts,
+						"LevelsDeep": levelsDeep,
+						"IsFolder": isFolder,
+						"IsFile": isFile,
+						"IsHiddenFile": fileName.startsWith("."),
+						"ParentKey": parentKey,
+						"FileName": fileName,
+						"URL": (() => {
+							if (isFolder) {
+								return [options.rootPath, ...keyParts].join("/");
+							} else if (options.endpoint) {
+								return `${options.endpoint}/${keyParts.join("/")}`;
+							} else {
+								return `https://${options.forcePathStyle ? "" : `${options.bucket}.`}s3-${options.region}.amazonaws.com${options.forcePathStyle ? `/${options.bucket}` : ""}/${keyParts.join("/")}`;
+							}
+						})()
+					};
+				})()
+			);
+		}
+
+		return returnArray;
+	}).filter((object, index, array) => {
+		// Filter out duplicate keys
+		return array.findIndex((otherObject) => removeLeadingTrailingSlashes(otherObject.Key) === removeLeadingTrailingSlashes(object.Key)) === index;
+	}).map((object, _i, array) => {
+		return {
+			...object,
+			"Children": object.Key === "/" ? array.filter((otherObject) => otherObject.LevelsDeep === 1) : array.filter((otherObject) => removeLeadingTrailingSlashes(otherObject.ParentKey) === removeLeadingTrailingSlashes(object.Key))
+		}
+	});
+
+	console.log(result);
 
 	let sitemap: Set<string> = new Set();
 
-	await Promise.all(Object.entries(result).map(async ([key, value]) => {
+	await Promise.all(result.map(async (object) => {
+		if (object.IsFile) {
+			return;
+		}
+
 		const file = await ejs.renderFile(path.join(__dirname, "..", "templates", "main.ejs"), {
-			"title": `${options.bucket} - ${key}`,
-			"items": value,
-			options
+			"title": `${options.bucket} - ${object.FileName}`,
+			"items": object.Children.filter((child) => options.includeHiddenFiles || !child.IsHiddenFile).sort((a, b) => {
+				if (a.IsFolder && !b.IsFolder) {
+					return -1;
+				} else if (!a.IsFolder && b.IsFolder) {
+					return 1;
+				} else {
+					return a.FileName.localeCompare(b.FileName);
+				}
+			}),
+			options,
+			"functions": {
+				removeLeadingTrailingSlashes
+			}
 		});
 
-		const saveLocation = path.join(options.output, key);
+		const saveLocation = path.join(options.output, object.Key ?? "");
 		await fs.mkdir(saveLocation, {
 			"recursive": true
 		});
 		await fs.writeFile(path.join(saveLocation, "index.html"), file, "utf8");
-		sitemap.add([options.domain, options.rootPath, key].map((item) => removeLeadingTrailingSlashes(item)).filter(Boolean).join("/"));
+		sitemap.add([options.domain, options.rootPath, object.Key].map((item) => removeLeadingTrailingSlashes(item)).filter(Boolean).join("/"));
 	}));
 
 	// Handle sitemap
@@ -179,7 +238,11 @@ async function copyDir(src: string, dest: string) {
 	}));
 }
 
-function removeLeadingTrailingSlashes(str: string) {
+function removeLeadingTrailingSlashes(str: string | undefined) {
+	if (!str) {
+		return str;
+	}
+
 	while (str.startsWith('/')) {
 		str = str.substring(1);
 	}
