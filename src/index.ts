@@ -22,6 +22,7 @@ program
 	.option("-o --output <path>", "Output path", ".")
 	.option("-v --verbose", "Verbose output")
 	.option("--endpoint <endpoint>", "S3 Endpoint (if using a custom endpoint)")
+	.option("--include-hidden-files", "Include hidden files", false)
 	.option("--forcePathStyle", "Force path style", false);
 
 program.parse(process.argv);
@@ -101,7 +102,9 @@ const options = program.opts();
 	}).reduce((returnObject, object) => {
 		const returnObjectKey = object.ParentKey ?? "/";
 		const itemsArray = returnObject[returnObjectKey] ?? [];
-		itemsArray.push(object);
+		if (options.includeHiddenFiles || !object.FileName.startsWith(".")) {
+			itemsArray.push(object);
+		}
 		returnObject[returnObjectKey] = itemsArray;
 
 		return returnObject
