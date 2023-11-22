@@ -193,6 +193,12 @@ const options = program.opts();
 
 	// Handle sitemap
 	if (options.includeSitemap) {
+		// A single sitemap cannot have more than 50,000 entries
+		if (sitemap.size > 50000) {
+			// https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap
+			console.error("Sitemap cannot have more than 50,000 entries. This is a known issue of `s3-explorer-static-generator`. Pull requests to fix this are welcome.");
+			process.exit(1);
+		}
 		const parser = new XMLBuilder({
 			"attributeNamePrefix": "@_",
 			"ignoreAttributes": false,
@@ -208,6 +214,12 @@ const options = program.opts();
 				}))
 			}
 		})}`;
+		// A single sitemaps is limited to 50MB
+		if (xml.length > 50_000_000) {
+			// https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap
+			console.error("Sitemap cannot be larger than 50 MB. This is a known issue of `s3-explorer-static-generator`. Pull requests to fix this are welcome.");
+			process.exit(1);
+		}
 		await fs.writeFile(path.join(options.output, "sitemap.xml"), xml, "utf8");
 	}
 
