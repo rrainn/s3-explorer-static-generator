@@ -217,6 +217,8 @@ const options = program.opts();
 		// A single sitemaps is limited to 50MB
 		if (xml.length > 50_000_000) {
 			// https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap
+			// @TODO: fix this so that it splits the sitemap into multiple sitemaps
+			// Need to ensure that a sitemap index can reference another sitemap index (https://charlie.fish/sitemap.xml)
 			console.error("Sitemap cannot be larger than 50 MB. This is a known issue of `s3-explorer-static-generator`. Pull requests to fix this are welcome.");
 			process.exit(1);
 		}
