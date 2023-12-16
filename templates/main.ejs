@@ -9,9 +9,11 @@
 <body>
 	<ol>
 		<% for (const item of items) { %>
-		<a href="<%= item.URL %>">
-			<li><%= item.FileName %></li>
-		</a>
+		<div>
+			<a href="<%= item.URL %>" class="inlineBlock">
+				<li><%= item.FileName %></li>
+			</a>
+		</div>
 		<% } %>
 	</ol>
 	<footer><% if (options.footer !== "") { %>
