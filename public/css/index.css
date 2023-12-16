@@ -13,3 +13,12 @@
 li {
 	list-style-type: none;
 }
+
+@media (prefers-color-scheme: dark) {
+	a {
+		color: #CCC;
+	}
+	a:visited {
+		color: #999;
+	}
+}
