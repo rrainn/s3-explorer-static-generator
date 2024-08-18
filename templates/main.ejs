@@ -7,7 +7,7 @@
 	<link rel="stylesheet" href="/<%= [options.rootPath, "public", "css", "index.css"].map(functions.removeLeadingTrailingSlashes).join("/") %>">
 </head>
 <body>
-	<nav id="breadcrumbs">
+	<%# <nav id="breadcrumbs">
 		<ul>
 			<% const breadcrumbs = items[0].KeyParts.slice(-1); %>
 			<% breadcrumbs.forEach(function (item, index, arr) { %>
@@ -16,13 +16,13 @@
 			</li>
 			<% }); %>
 		</ul>
-	</nav>
+	</nav> %>
 	<table>
-		<thead>
+		<%# <thead>
 			<tr>
 				<th><%= title %></th>
 			</tr>
-		</thead>
+		</thead> %>
 		<tbody>
 			<% for (const item of items) { %>
 			<tr>
