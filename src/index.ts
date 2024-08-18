@@ -180,6 +180,7 @@ const options = program.opts();
 				}
 			}),
 			options,
+			result,
 			"functions": {
 				removeLeadingTrailingSlashes
 			}
