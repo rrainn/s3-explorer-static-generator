@@ -7,22 +7,7 @@
 	<link rel="stylesheet" href="/<%= [options.rootPath, "public", "css", "index.css"].map(functions.removeLeadingTrailingSlashes).join("/") %>">
 </head>
 <body>
-	<%# <nav id="breadcrumbs">
-		<ul>
-			<% const breadcrumbs = items[0].KeyParts.slice(-1); %>
-			<% breadcrumbs.forEach(function (item, index, arr) { %>
-			<li>
-				<a href="<%= [options.rootPath, ...arr.slice(0, index)].map(functions.removeLeadingTrailingSlashes).join("/") %>"><%= item %></a>
-			</li>
-			<% }); %>
-		</ul>
-	</nav> %>
 	<table>
-		<%# <thead>
-			<tr>
-				<th><%= title %></th>
-			</tr>
-		</thead> %>
 		<tbody>
 			<% for (const item of items) { %>
 			<tr>
