@@ -71,7 +71,7 @@ const options = program.opts();
 
 	let command = new ListObjectsCommand({
 		"Bucket": options.bucket,
-		"MaxKeys": 1000
+		"MaxKeys": 100
 	});
 
 	let response, allObjects = [];
@@ -84,6 +84,8 @@ const options = program.opts();
 			"Marker": response.NextMarker
 		});
 	} while (response.NextMarker);
+
+	console.log(`Retrieved ${allObjects.length} objects.`);
 
 	const result = allObjects.map((object, _i, array) => {
 		const keyParts = (object.Key?.split("/") ?? []).filter((part) => part.length > 0);
