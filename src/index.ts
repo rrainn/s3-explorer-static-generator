@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { program } from "commander";
-import { ListObjectsCommand, S3Client, S3ClientConfig } from "@aws-sdk/client-s3";
+import { ListObjectsV2Command, S3Client, S3ClientConfig } from "@aws-sdk/client-s3";
 import { promises as fs } from "fs";
 import * as path from "path";
 import * as ejs from "ejs";
@@ -69,7 +69,7 @@ const options = program.opts();
 		process.exit(1);
 	}
 
-	let command = new ListObjectsCommand({
+	let command = new ListObjectsV2Command({
 		"Bucket": options.bucket,
 		"MaxKeys": 100
 	});
@@ -78,12 +78,12 @@ const options = program.opts();
 	do {
 		response = await s3Client.send(command);
 		allObjects.push(...response.Contents ?? []);
-		command = new ListObjectsCommand({
+		command = new ListObjectsV2Command({
 			"Bucket": options.bucket,
 			"MaxKeys": 100,
-			"Marker": response.NextMarker
+			"ContinuationToken": response.NextContinuationToken
 		});
-	} while (response.NextMarker);
+	} while (response.NextContinuationToken);
 
 	console.log(`Retrieved ${allObjects.length} objects.`);
 
